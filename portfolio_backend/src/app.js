@@ -7,11 +7,23 @@ const swaggerSpec = require('../swagger');
 // Initialize express app
 const app = express();
 
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '*')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: allowedOrigins.includes('*') ? '*' : allowedOrigins,
+    methods: (process.env.ALLOWED_METHODS || 'GET,POST,PUT,DELETE,PATCH,OPTIONS')
+      .split(',')
+      .map((m) => m.trim()),
+    allowedHeaders: (process.env.ALLOWED_HEADERS || 'Content-Type,Authorization')
+      .split(',')
+      .map((h) => h.trim()),
+    maxAge: Number(process.env.CORS_MAX_AGE || 0) || undefined,
+  })
+);
 app.set('trust proxy', true);
 app.use('/docs', swaggerUi.serve, (req, res, next) => {
   const host = req.get('host');           // may or may not include port
